@@ -5,6 +5,8 @@ const $$ = (s) => Array.from(document.querySelectorAll(s));
 const msg = (type, data) => new Promise((res) => chrome.runtime.sendMessage(Object.assign({ type }, data), res));
 const norm = (s) => (s || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
 const logoUrl = (d) => d ? `https://images.capitaloneshopping.com/api/v1/logos?domain=${encodeURIComponent(d)}&width=120&type=cropped&fallback=true` : "";
+// DOM builder — text set via textContent, which auto-escapes (no raw HTML strings).
+const mk = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
 
 let state = { settings: {}, watchlist: [], snapshot: { deals: [], ts: 0 } };
 
@@ -79,7 +81,7 @@ function renderDeals() {
   });
   const list = $("#dealList");
   const empty = $("#dealsEmpty");
-  list.innerHTML = "";
+  list.textContent = "";
   if (!groups.length) {
     empty.classList.remove("hidden");
     empty.textContent = (state.snapshot.deals || []).length
@@ -90,30 +92,51 @@ function renderDeals() {
   empty.classList.add("hidden");
 
   for (const g of groups) {
-    const card = document.createElement("div");
-    card.className = "card";
-    const dealsHtml = g.deals.map((d, i) => `
-      <div class="deal">
-        <div class="pct">${d.pct}%</div>
-        <div class="info">
-          <div>${escapeHtml(d.title || "(offer)")}</div>
-          <div>${d.price ? `<span class="price">${escapeHtml(d.price)}</span> · ` : ""}<span class="cat">${escapeHtml(d.category || "")}</span></div>
-        </div>
-        <button class="jump" data-merchant="${escapeAttr(g.merchant)}" data-title="${escapeAttr(d.title || "")}" data-index="${d.index}">Jump →</button>
-      </div>`).join("");
-    card.innerHTML = `
-      <div class="head">
-        ${g.domain ? `<img src="${logoUrl(g.domain)}" alt="" onerror="this.style.display='none'">` : `<div class="logo" style="width:26px;height:26px;background:#eef3f5;color:#88979e">${escapeHtml((g.merchant||"?")[0])}</div>`}
-        <div class="mname">${escapeHtml(g.merchant)}</div>
-        <div class="badge">${g.max}%<small>top${g.deals.length > 1 ? ` · ${g.deals.length} deals` : ""}</small></div>
-        <span class="chev">▶</span>
-      </div>
-      <div class="deals-sub">${dealsHtml}</div>`;
-    card.querySelector(".head").addEventListener("click", () => card.classList.toggle("open"));
-    card.querySelectorAll(".jump").forEach((b) => b.addEventListener("click", (e) => {
-      e.stopPropagation();
-      doJump({ merchant: b.dataset.merchant, title: b.dataset.title, index: Number(b.dataset.index) });
-    }));
+    const card = mk("div", "card");
+
+    const head = mk("div", "head");
+    if (g.domain) {
+      const img = mk("img");
+      img.src = logoUrl(g.domain);
+      img.alt = "";
+      img.addEventListener("error", () => { img.style.display = "none"; });
+      head.appendChild(img);
+    } else {
+      const ph = mk("div", "logo", (g.merchant || "?")[0]);
+      ph.style.cssText = "width:26px;height:26px;background:#eef3f5;color:#88979e";
+      head.appendChild(ph);
+    }
+    head.appendChild(mk("div", "mname", g.merchant));
+    const badge = mk("div", "badge", g.max + "%");
+    badge.appendChild(mk("small", null, "top" + (g.deals.length > 1 ? ` · ${g.deals.length} deals` : "")));
+    head.appendChild(badge);
+    head.appendChild(mk("span", "chev", "▶"));
+    head.addEventListener("click", () => card.classList.toggle("open"));
+    card.appendChild(head);
+
+    const sub = mk("div", "deals-sub");
+    for (const d of g.deals) {
+      const deal = mk("div", "deal");
+      deal.appendChild(mk("div", "pct", d.pct + "%"));
+      const info = mk("div", "info");
+      info.appendChild(mk("div", null, d.title || "(offer)"));
+      const meta = mk("div");
+      if (d.price) {
+        meta.appendChild(mk("span", "price", d.price));
+        meta.appendChild(document.createTextNode(" · "));
+      }
+      meta.appendChild(mk("span", "cat", d.category || ""));
+      info.appendChild(meta);
+      deal.appendChild(info);
+      const jump = mk("button", "jump", "Jump →");
+      jump.addEventListener("click", (e) => {
+        e.stopPropagation();
+        doJump({ merchant: g.merchant, title: d.title, index: d.index });
+      });
+      deal.appendChild(jump);
+      sub.appendChild(deal);
+    }
+    card.appendChild(sub);
     list.appendChild(card);
   }
 }
@@ -139,23 +162,31 @@ $("#refreshBtn").addEventListener("click", async () => {
 function renderWatchlist() {
   // datalist of known merchants
   const dl = $("#merchantList");
+  dl.textContent = "";
   const merchants = Array.from(new Set((state.snapshot.deals || []).map((d) => d.merchant))).sort();
-  dl.innerHTML = merchants.map((m) => `<option value="${escapeAttr(m)}">`).join("");
+  for (const m of merchants) {
+    const o = document.createElement("option");
+    o.value = m;
+    dl.appendChild(o);
+  }
 
   const list = $("#watchList");
   const empty = $("#watchEmpty");
-  list.innerHTML = "";
+  list.textContent = "";
   if (!state.watchlist.length) { empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
   state.watchlist.forEach((w, i) => {
-    const row = document.createElement("div");
-    row.className = "watchitem";
-    row.innerHTML = `<span class="wm">${escapeHtml(w.merchant)}</span><span class="wt">≥ ${w.threshold}%</span><button class="del" title="Remove">✕</button>`;
-    row.querySelector(".del").addEventListener("click", async () => {
+    const row = mk("div", "watchitem");
+    row.appendChild(mk("span", "wm", w.merchant));
+    row.appendChild(mk("span", "wt", `≥ ${w.threshold}%`));
+    const del = mk("button", "del", "✕");
+    del.title = "Remove";
+    del.addEventListener("click", async () => {
       state.watchlist.splice(i, 1);
       await msg("saveWatchlist", { watchlist: state.watchlist });
       renderWatchlist();
     });
+    row.appendChild(del);
     list.appendChild(row);
   });
 }
@@ -214,7 +245,6 @@ $("#runNow").addEventListener("click", async () => {
   setStatus("Checking deals…");
   const r = await msg("runCheckNow");
   if (r) {
-    state.snapshot = state.snapshot; // unchanged ref; refresh display below
     const nm = r.hits ? r.hits.length : 0;
     setStatus(`${r.count || 0} deals scanned · ${nm} match${nm === 1 ? "" : "es"}${r.sent ? " · email sent ✓" : nm ? " · (no email — see When to email)" : ""}`, nm ? "ok" : "");
     const fresh = await msg("getState"); state = fresh; renderStatus(); renderDeals(); renderWatchlist();
@@ -229,7 +259,5 @@ function toast(t) {
   const el = $("#toast"); el.textContent = t; el.classList.remove("hidden");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.add("hidden"), 2600);
 }
-function escapeHtml(s) { return (s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
-function escapeAttr(s) { return escapeHtml(s).replace(/'/g, "&#39;"); }
 
 init();
