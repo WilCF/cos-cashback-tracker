@@ -1,0 +1,84 @@
+COS CASH-BACK TRACKER — SETUP
+=================================
+
+WHAT IT DOES
+- Reads the cash-back % deals on capitaloneshopping.com while you're logged in.
+- Lets you filter by store and see the highest % offered, then "Jump to deal" so
+  YOUR click mints the tracked link and your cash back is credited.
+- Watchlist: get a once-daily email when a store you picked hits your % (e.g. eBay >= 15%).
+- Digest: also emails you anything >= 50% (configurable) — great for catching rare 70% deals.
+- No passwords or credentials are ever stored. It works inside your own logged-in browser.
+
+
+PART 1 — INSTALL THE EXTENSION  (works in Chrome, Edge, and Firefox)
+
+First, get the files onto your computer:
+  Option A (git):    git clone https://github.com/WilCF/cos-cashback-tracker.git
+  Option B (no git): on the GitHub repo page, click the green "Code" button →
+                     "Download ZIP", then unzip it.
+  Keep the folder somewhere permanent — don't delete it. The browser loads the
+  extension from this folder on every launch.
+
+Then load it (pick your browser):
+
+  CHROME
+    1. Go to:  chrome://extensions
+    2. Turn ON "Developer mode" (toggle, top-right).
+    3. Click "Load unpacked" → select the folder that contains manifest.json.
+    4. Click the puzzle-piece icon in the toolbar → pin "COS Cash-Back Tracker".
+
+  EDGE
+    1. Go to:  edge://extensions
+    2. Turn ON "Developer mode" (toggle, bottom-left).
+    3. Click "Load unpacked" → select the folder that contains manifest.json.
+    4. Click the extensions (puzzle-piece) icon in the toolbar → pin it.
+
+  FIREFOX  (Linux or any OS)
+    Firefox uses its own build in the firefox/ folder (it needs a different background
+    type). It's committed prebuilt; only rebuild if you edited shared files:
+        bash build-firefox.sh
+    1. Go to:  about:debugging#/runtime/this-firefox
+    2. Click "Load Temporary Add-on...".
+    3. Select the file:  firefox/manifest.json
+    4. The "%" icon appears in the toolbar.
+    NOTE: stable Firefox removes a temporary add-on when you RESTART the browser —
+    just repeat steps 1-3 to reload it. (Permanent install needs Mozilla AMO signing
+    or Firefox Developer Edition / ESR.)
+
+Finally:
+    Open https://capitaloneshopping.com/ and log in. Give it a few seconds — the
+    extension reads the deals automatically. Click the "%" icon to filter by store,
+    see the top % per store, jump to a deal, set your watchlist, and configure email.
+
+
+PART 2 — TURN ON EMAIL ALERTS (2 min, optional)
+The extension can email from your own Gmail using a tiny Google Apps Script relay.
+1. Go to  https://script.google.com  → New project.
+2. Delete the sample code, then paste the entire contents of  email_relay.gs
+   (included in this folder).
+3. Click  Deploy → New deployment → (gear icon) → Web app.
+      Execute as:     Me
+      Who has access: Anyone
+4. Click Deploy, then Authorize access and allow it (it only sends mail as you).
+5. Copy the Web app URL that ends in  /exec
+6. In the extension popup: Settings → "Email setup" → paste the URL → Save settings
+   → "Send test email". Check your inbox.
+
+
+DAILY USE
+- Watchlist tab: type a store (autocompletes from what's on the page), set a %, Add.
+- Settings: set the digest threshold (default 50%), choose "Only when something new"
+  (recommended — no spam) or "Every day while active", and toggle the silent daily refresh.
+- The silent daily refresh briefly opens COS in a background tab once a day so alerts
+  stay current even on days you don't visit. Requires your browser (Chrome or Edge)
+  to be open at some point that day. Turn it off in Settings if you'd rather it only
+  read deals when you visit.
+
+
+NOTES
+- Capital One Shopping builds the real deal link only when you click, so the tool can't
+  hand you a raw URL — it takes you to the exact deal so your in-session click is credited.
+- If "Jump to deal" can't find an item, it rotated out of the current page; hit ⟳ Refresh.
+- Class names on COS can change over time; this tool keys off stable data attributes and
+  the "% back" text, so it should keep working. If deals ever stop showing, reload the
+  COS page and click ⟳.

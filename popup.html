@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">%</span>
+      <div>
+        <div class="title">Cash-Back Tracker</div>
+        <div class="sub" id="status">Loading…</div>
+      </div>
+    </div>
+    <button id="refreshBtn" class="ghost" title="Refresh deals">⟳</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="deals">Deals</button>
+    <button class="tab" data-tab="watch">Watchlist</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <!-- DEALS -->
+  <section id="deals" class="panel active">
+    <div class="searchrow">
+      <input id="search" type="search" placeholder="Filter by store… (e.g. eBay)" autocomplete="off" />
+    </div>
+    <div id="dealList" class="list"></div>
+    <div id="dealsEmpty" class="empty hidden"></div>
+  </section>
+
+  <!-- WATCHLIST -->
+  <section id="watch" class="panel">
+    <p class="hint">Get a daily email when one of these stores reaches your % (otherwise silence).</p>
+    <div class="addrow">
+      <input id="watchMerchant" list="merchantList" placeholder="Store" autocomplete="off" />
+      <datalist id="merchantList"></datalist>
+      <div class="pctwrap"><input id="watchPct" type="number" min="1" max="100" step="0.5" value="15" />%</div>
+      <button id="addWatch" class="primary">Add</button>
+    </div>
+    <div id="watchList" class="list"></div>
+    <div id="watchEmpty" class="empty hidden">No stores yet. Add one above — e.g. eBay ≥ 15%.</div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="panel">
+    <label class="field">
+      <span>Email digest to</span>
+      <input id="setEmail" type="email" placeholder="you@gmail.com" />
+    </label>
+
+    <label class="field">
+      <span>Also email me anything ≥</span>
+      <div class="pctwrap"><input id="setGlobal" type="number" min="1" max="100" step="0.5" />%</div>
+    </label>
+
+    <label class="field">
+      <span>When to email</span>
+      <select id="setNotifyMode">
+        <option value="new">Only when something new</option>
+        <option value="daily">Every day while active</option>
+      </select>
+    </label>
+
+    <label class="toggle"><input type="checkbox" id="setBg" /> <span>Silent daily refresh — opens Capital One Shopping briefly in the background once a day to check your watchlist. <b>Off by default.</b></span></label>
+    <label class="toggle"><input type="checkbox" id="setAutoClick" /> <span>Auto-click the deal on “Jump” (off = highlight only)</span></label>
+    <label class="toggle"><input type="checkbox" id="setEnabled" /> <span>Tracking enabled</span></label>
+
+    <details class="email-setup">
+      <summary>Email setup (one-time, ~2 min)</summary>
+      <ol>
+        <li>Open <b>script.google.com</b> → New project.</li>
+        <li>Paste the code from <b>email_relay.gs</b> (included with the extension).</li>
+        <li><b>Deploy → New deployment → Web app</b>; “Execute as: Me”, “Who has access: Anyone”.</li>
+        <li>Authorize, copy the <b>/exec</b> URL, paste it below.</li>
+      </ol>
+      <p class="consent">Email is <b>off until you add a URL</b>. When enabled, the extension sends only your matched deals and the email address you enter to the Apps Script URL you provide, so it can email you — nothing is sent anywhere else, and there is no analytics or tracking.</p>
+      <input id="setRelay" type="url" placeholder="https://script.google.com/macros/s/…/exec" />
+      <button id="testEmail" class="ghost wide">Send test email</button>
+    </details>
+
+    <div class="btnrow">
+      <button id="saveSettings" class="primary wide">Save settings</button>
+      <button id="runNow" class="ghost wide">Check now</button>
+    </div>
+    <div id="setStatus" class="setstatus"></div>
+
+    <p class="disclaimer">Independent tool — not affiliated with, endorsed by, or sponsored by Capital One. “Capital One Shopping” is a trademark of its respective owner.</p>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
