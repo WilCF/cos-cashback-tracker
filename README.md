@@ -165,3 +165,7 @@ cos-cashback-tracker/
 ```
 
 Chrome/Edge load from the **repo root**; Firefox loads from **`firefox/`**. Both share the same `content.js`, `background.js`, and `popup.*` — only the manifest differs, and `build-firefox.sh` keeps the two in sync.
+
+## License
+
+[MIT](./LICENSE) © WilCF. You're free to use, modify, and redistribute this software, including commercially — just keep the copyright and license notice (the attribution) intact.
